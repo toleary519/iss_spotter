@@ -23,9 +23,9 @@ const fetchMyIP = function(callback) {
   });
 };
 
-const fetchCoordsByIP = function(callback) {
+const fetchCoordsByIP = function(ip, callback) {
 
-  request('https://freegeoip.app/json/', (error, response, body) => {
+  request(`https://freegeoip.app/json/${ip}`, (error, response, body) => {
     if (error) {
       callback(error, null);
       return;
@@ -37,11 +37,8 @@ const fetchCoordsByIP = function(callback) {
       return;
     }
 
-    const latitude = JSON.parse(body).latitude;
-    const longitude = JSON.parse(body).longitude;
-    const coords = {latitude, longitude};
-    // console.log(coords);
-    callback(null, coords);
+    const {latitude, longitude} = JSON.parse(body);
+    callback(null, {latitude, longitude});
   });
 };
 
@@ -64,5 +61,29 @@ const fetchFlyOverTimes = function(coords, callback) {
   });
 };
 
+const nextTimesForMyLocation = function(callback) {
+  fetchMyIP((error, ip) => {
+    if (error) {
+      return callback(error, null);
+    }
 
-module.exports = { fetchMyIP, fetchCoordsByIP, fetchFlyOverTimes };
+    fetchCoordsByIP(ip, (error, loc) => {
+      if (error) {
+        return callback(error, null);
+      }
+
+      fetchFlyOverTimes(loc, (error, nextPasses) => {
+        if (error) {
+          return callback(error, null);
+        }
+
+        callback(null, nextPasses);
+      });
+    });
+  });
+};
+
+
+module.exports = { nextTimesForMyLocation };
+
+// module.exports = { fetchMyIP, fetchCoordsByIP, fetchFlyOverTimes };
